@@ -47,13 +47,6 @@ export const api = {
       if (err.message && err.message.includes('Invalid credentials')) {
         throw err;
       }
-      // Demo / Mock fallback check for default credentials
-      if (username === 'admin' && password === 'adminsecret') {
-        return {
-          access_token: 'mock-jwt-token-admin-' + Date.now(),
-          token_type: 'bearer'
-        };
-      }
       throw new Error('Invalid credentials (Try admin / adminsecret)');
     }
   },

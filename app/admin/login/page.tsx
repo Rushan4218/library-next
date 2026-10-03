@@ -13,8 +13,8 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
 
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('adminsecret');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent ) => {
     e.preventDefault();
     if (!username || !password) {
       setError('Please enter username and password');
@@ -95,15 +95,6 @@ export default function AdminLoginPage() {
                 icon={<Lock className="w-4 h-4" />}
               />
             </div>
-
-            <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-xl text-[11px] text-indigo-800 dark:text-indigo-300 flex items-start gap-2">
-              <Info className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-              <span>
-                Default credentials configured in `.env`: <br />
-                Username: <code className="font-bold">admin</code> | Password: <code className="font-bold">adminsecret</code>
-              </span>
-            </div>
-
             <Button
               type="submit"
               isLoading={loading}
