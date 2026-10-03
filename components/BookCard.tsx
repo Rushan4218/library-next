@@ -2,7 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { Book } from '@/lib/types';
 import { StatusBadge } from './StatusBadge';
-import { BookOpen, User, Hash, ArrowRight, BookmarkCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { User, Hash, ArrowRight, BookmarkCheck } from 'lucide-react';
 
 interface BookCardProps {
   book: Book;
@@ -12,14 +13,35 @@ interface BookCardProps {
 export const BookCard: React.FC<BookCardProps> = ({ book, onBorrow }) => {
   const isAvailable = book.status === 'AVAILABLE';
 
+  // Parse comma-separated categories safely
+  const categories = book.category
+    ? book.category.split(',').map(c => c.trim()).filter(Boolean)
+    : ['General'];
+
+  const primaryCategory = categories[0] || 'General';
+  const extraCount = categories.length - 1;
+
   return (
     <div className="group relative flex flex-col justify-between bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 p-5 shadow-sm hover:shadow-xl hover:border-indigo-200 dark:hover:border-indigo-900/60 transition-all duration-300">
       <div>
-        {/* Top Header: Category & Status */}
+        {/* Top Header: Category Badge(s) & Status */}
         <div className="flex items-center justify-between gap-2 mb-3">
-          <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-md">
-            {book.category || 'General'}
-          </span>
+          <div className="flex items-center gap-1.5 overflow-hidden max-w-[65%]">
+            <span
+              className="inline-block text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-md truncate"
+              title={categories.join(', ')}
+            >
+              {primaryCategory}
+            </span>
+            {extraCount > 0 && (
+              <span
+                className="inline-block text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-md shrink-0"
+                title={categories.slice(1).join(', ')}
+              >
+                +{extraCount}
+              </span>
+            )}
+          </div>
           <StatusBadge status={book.status} type="book" size="sm" />
         </div>
 
@@ -31,8 +53,8 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onBorrow }) => {
         </Link>
         
         <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3">
-          <User className="w-3.5 h-3.5 text-gray-400" />
-          <span className="font-medium text-gray-700 dark:text-gray-300">{book.author}</span>
+          <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span className="font-medium text-gray-700 dark:text-gray-300 truncate">{book.author}</span>
         </p>
 
         {/* ISBN if available */}
@@ -61,20 +83,22 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onBorrow }) => {
         </Link>
 
         {isAvailable ? (
-          <button
+          <Button
             onClick={() => onBorrow(book)}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-sm shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-1.5"
+            variant="default"
+            size="sm"
           >
-            <BookmarkCheck className="w-3.5 h-3.5" />
+            <BookmarkCheck className="w-3.5 h-3.5 mr-1" />
             Borrow Book
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             disabled
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600 cursor-not-allowed"
+            variant="secondary"
+            size="sm"
           >
             Unavailable
-          </button>
+          </Button>
         )}
       </div>
     </div>

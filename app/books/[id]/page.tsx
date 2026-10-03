@@ -9,6 +9,7 @@ import { BorrowModal } from '@/components/BorrowModal';
 import { ReceiptModal } from '@/components/ReceiptModal';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { Button } from '@/components/ui/button';
 import { BookOpen, User, Hash, ArrowLeft, BookmarkCheck, Calendar, Info, Loader2 } from 'lucide-react';
 
 export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,6 +39,11 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     loadBook();
   }, [bookId]);
 
+  // Parse comma-separated categories safely
+  const categories = book?.category
+    ? book.category.split(',').map(c => c.trim()).filter(Boolean)
+    : ['General'];
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       <Navbar />
@@ -60,22 +66,24 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
             <Info className="w-10 h-10 text-rose-500 mx-auto" />
             <h2 className="text-lg font-bold">Book Not Found</h2>
             <p className="text-xs text-gray-500 max-w-sm mx-auto">{error}</p>
-            <Link
-              href="/books"
-              className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
-            >
-              Return to Catalog
+            <Link href="/books">
+              <Button variant="default" size="sm">Return to Catalog</Button>
             </Link>
           </div>
         ) : (
           <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 sm:p-10 shadow-lg space-y-8">
             {/* Header info */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-md">
-                    {book.category || 'General'}
-                  </span>
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {categories.map((cat, idx) => (
+                    <span
+                      key={idx}
+                      className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-md"
+                    >
+                      {cat}
+                    </span>
+                  ))}
                   <StatusBadge status={book.status} type="book" size="md" />
                 </div>
 
@@ -90,13 +98,14 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
               {/* Borrow Trigger */}
               {book.status === 'AVAILABLE' ? (
-                <button
+                <Button
                   onClick={() => setShowBorrowModal(true)}
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-sm shadow-md shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0"
+                  variant="gradient"
+                  size="lg"
+                  className="shrink-0"
                 >
-                  <BookmarkCheck className="w-4 h-4" />
-                  Borrow Book Online
-                </button>
+                  <BookmarkCheck className="w-4 h-4 mr-1.5" /> Borrow Book Online
+                </Button>
               ) : (
                 <div className="px-5 py-2.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-xs font-semibold text-center shrink-0">
                   Currently {book.status.toLowerCase()}
