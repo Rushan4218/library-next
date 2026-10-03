@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Book, BorrowResponse } from '@/lib/types';
-import { api } from '@/lib/api';
+import { useBooks, useDynamicCategories } from '@/hooks/useBooks';
 import { BookCard } from '@/components/BookCard';
 import { BorrowModal } from '@/components/BorrowModal';
 import { ReceiptModal } from '@/components/ReceiptModal';
@@ -13,15 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Search, Loader2, ChevronLeft, ChevronRight, Filter, Tags } from 'lucide-react';
 
-const CATEGORY_OPTIONS = [
-  { value: 'ALL', label: 'All Categories' },
-  { value: 'Technology', label: 'Technology' },
-  { value: 'Computer Science', label: 'Computer Science' },
-  { value: 'Sci-Fi & Fantasy', label: 'Sci-Fi & Fantasy' },
-  { value: 'Psychology', label: 'Psychology' },
-  { value: 'Self-Help', label: 'Self-Help' }
-];
-
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'All Statuses' },
   { value: 'AVAILABLE', label: 'AVAILABLE' },
@@ -31,39 +22,31 @@ const STATUS_OPTIONS = [
 ];
 
 export default function BooksPage() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('ALL');
   const [status, setStatus] = useState('ALL');
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 12;
 
+  // React Query hook for dynamic category options
+  const dynamicCategories = useDynamicCategories();
+  const categorySelectOptions = [
+    { value: 'ALL', label: 'All Categories' },
+    ...dynamicCategories.map(c => ({ value: c, label: c }))
+  ];
+
+  // React Query hook for books catalog
+  const { data: books = [], isLoading: loading, refetch } = useBooks({
+    search: searchQuery || undefined,
+    category: category !== 'ALL' ? category : undefined,
+    status: status !== 'ALL' ? status : undefined,
+    skip: page * PAGE_SIZE,
+    limit: PAGE_SIZE
+  });
+
   // Modals
   const [borrowTarget, setBorrowTarget] = useState<Book | null>(null);
   const [receiptData, setReceiptData] = useState<BorrowResponse | null>(null);
-
-  const loadBooks = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getBooks({
-        search: searchQuery || undefined,
-        category: category !== 'ALL' ? category : undefined,
-        status: status !== 'ALL' ? status : undefined,
-        skip: page * PAGE_SIZE,
-        limit: PAGE_SIZE
-      });
-      setBooks(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadBooks();
-  }, [searchQuery, category, status, page]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
@@ -95,18 +78,18 @@ export default function BooksPage() {
               icon={<Search className="w-4 h-4" />}
             />
 
-            {/* Custom Shadcn Select for Category */}
+            {/* Custom Dynamic Category Select */}
             <Select
               value={category}
               onChange={v => {
                 setCategory(v);
                 setPage(0);
               }}
-              options={CATEGORY_OPTIONS}
+              options={categorySelectOptions}
               icon={<Tags className="w-4 h-4" />}
             />
 
-            {/* Custom Shadcn Select for Status */}
+            {/* Custom Status Select */}
             <Select
               value={status}
               onChange={v => {
@@ -182,7 +165,7 @@ export default function BooksPage() {
           onSuccess={res => {
             setBorrowTarget(null);
             setReceiptData(res);
-            loadBooks();
+            refetch();
           }}
         />
       )}

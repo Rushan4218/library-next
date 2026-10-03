@@ -1,19 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Book, BorrowResponse } from '@/lib/types';
-import { api } from '@/lib/api';
+import { useBooks, useDynamicCategories } from '@/hooks/useBooks';
 import { BookCard } from '@/components/BookCard';
 import { BorrowModal } from '@/components/BorrowModal';
 import { ReceiptModal } from '@/components/ReceiptModal';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Select } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  Library,
   Search,
   BookOpen,
   Sparkles,
@@ -22,8 +20,6 @@ import {
   Filter,
   Loader2
 } from 'lucide-react';
-
-const CATEGORIES = ['ALL', 'Technology', 'Computer Science', 'Sci-Fi & Fantasy', 'Psychology', 'Self-Help'];
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'All Statuses' },
@@ -34,11 +30,20 @@ const STATUS_OPTIONS = [
 ];
 
 export default function HomePage() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
+
+  // React Query hook for dynamic categories parsing (comma-separated splitting & deduplication)
+  const dynamicCategories = useDynamicCategories();
+  const categoriesList = ['ALL', ...dynamicCategories];
+
+  // React Query hook for books catalog
+  const { data: books = [], isLoading: loading, refetch } = useBooks({
+    search: searchQuery || undefined,
+    category: selectedCategory !== 'ALL' ? selectedCategory : undefined,
+    status: selectedStatus !== 'ALL' ? selectedStatus : undefined
+  });
 
   // Modal states
   const [borrowBookTarget, setBorrowBookTarget] = useState<Book | null>(null);
@@ -47,30 +52,10 @@ export default function HomePage() {
   // Quick verify input
   const [quickToken, setQuickToken] = useState('');
 
-  const fetchBooks = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getBooks({
-        search: searchQuery || undefined,
-        category: selectedCategory !== 'ALL' ? selectedCategory : undefined,
-        status: selectedStatus !== 'ALL' ? selectedStatus : undefined
-      });
-      setBooks(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBooks();
-  }, [searchQuery, selectedCategory, selectedStatus]);
-
   const handleBorrowSuccess = (response: BorrowResponse) => {
     setBorrowBookTarget(null);
     setReceiptData(response);
-    fetchBooks();
+    refetch();
   };
 
   return (
@@ -94,7 +79,7 @@ export default function HomePage() {
             </h1>
 
             <p className="max-w-2xl mx-auto text-sm sm:text-base text-gray-300 font-normal leading-relaxed">
-              Explore thousands of books across technology, science, fiction, and philosophy. Reserve online, instantly receive your unique <code className="bg-white/10 px-2 py-0.5 rounded font-mono text-cyan-300 text-xs">LIB-XXXX-XXXX</code> token, and collect your book at the front desk.
+              Explore thousands of books across fantasy, technology, romance, science, and fiction. Reserve online, instantly receive your unique <code className="bg-white/10 px-2 py-0.5 rounded font-mono text-cyan-300 text-xs">LIB-XXXX-XXXX</code> token, and collect your book at the front desk.
             </p>
 
             {/* Quick Search Bar */}
@@ -109,7 +94,7 @@ export default function HomePage() {
                   className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-hidden"
                 />
                 <Button
-                  onClick={fetchBooks}
+                  onClick={() => refetch()}
                   variant="gradient"
                   size="default"
                   className="shrink-0"
@@ -172,9 +157,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Categories Horizontal Scroll */}
+          {/* Dynamic Categories Horizontal Scroll Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-            {CATEGORIES.map(cat => (
+            {categoriesList.map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
